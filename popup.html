@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Optimize Prompt</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      background: #111114;
+      color: #e8e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .header {
+      background: #18181e;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .brand { display: flex; align-items: center; gap: 9px; }
+
+    .logo {
+      width: 30px; height: 30px;
+      background: #1c1c1c;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #f0a070;
+    }
+
+    .brand-text .title { font-size: 13px; font-weight: 600; color: #f0f0f0; }
+    .brand-text .sub   { font-size: 10px; color: #555; margin-top: 1px; }
+
+    .server-badge {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 8px;
+      border-radius: 100px;
+      font-size: 10px;
+      font-family: monospace;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+      color: #555;
+      cursor: pointer;
+      transition: all 0.15s;
+      outline: none;
+    }
+
+    .server-badge.ok    { border-color: rgba(74,222,128,0.3); color: #4ade80; }
+    .server-badge.error { border-color: rgba(248,113,113,0.3); color: #f87171; }
+    .sdot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    .body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .section-label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.9px; text-transform: uppercase;
+      color: #444; margin-bottom: 5px;
+    }
+
+    select, input[type="password"], input[type="text"] {
+      width: 100%;
+      background: #1a1a22;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px;
+      color: #e0e0f0;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+
+    input:focus, select:focus { border-color: rgba(240,160,112,0.45); }
+    input::placeholder { color: #383840; }
+
+    .api-row { display: flex; gap: 6px; }
+    .api-row input { flex: 1; font-family: monospace; font-size: 11px; }
+
+    .show-btn {
+      padding: 0 10px;
+      background: #1a1a22;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px;
+      color: #555;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    .show-btn:hover { color: #aaa; }
+
+    .hint { font-size: 10px; color: #383844; margin-top: 4px; line-height: 1.5; }
+    .hint a { color: #f0a070; text-decoration: none; }
+    .hint a:hover { text-decoration: underline; }
+
+    .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 2px 0; }
+
+    .save-btn {
+      width: 100%; padding: 10px;
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 9px;
+      background: #1c1c1c;
+      color: #f0f0f0;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .save-btn:hover { background: #252525; border-color: rgba(240,160,112,0.35); }
+
+    .saved-msg {
+      display: none;
+      text-align: center;
+      font-size: 11px;
+      color: #4ade80;
+      padding: 3px;
+    }
+
+    .model-chip-row {
+      display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px;
+    }
+
+    .model-chip {
+      padding: 3px 9px;
+      border-radius: 100px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: transparent;
+      color: #555;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+
+    .model-chip:hover { border-color: rgba(240,160,112,0.3); color: #f0c090; }
+    .model-chip.active { border-color: rgba(240,160,112,0.5); background: rgba(240,160,112,0.1); color: #f0b070; }
+
+    .ollama-note {
+      display: none;
+      font-size: 10px;
+      color: #3a3;
+      padding: 6px 8px;
+      background: rgba(50,200,50,0.05);
+      border-radius: 6px;
+      border: 1px solid rgba(50,200,50,0.15);
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    .ollama-note.show { display: block; }
+
+    .footer {
+      padding: 8px 16px 12px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 10px;
+      color: #333;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="logo">✦</div>
+    <div class="brand-text">
+      <div class="title">Optimize Prompt</div>
+      <div class="sub">LangChain · Multi-model</div>
+    </div>
+  </div>
+  <button type="button" class="server-badge" id="server-badge">
+    <div class="sdot"></div>
+    <span id="server-txt">checking…</span>
+  </button>
+</div>
+
+<div class="body">
+
+  <div>
+    <div class="section-label">Provider</div>
+    <select id="provider-select">
+      <option value="anthropic">🟠 Anthropic (Claude)</option>
+      <option value="openai">🟢 OpenAI (GPT)</option>
+      <option value="google">🔵 Google (Gemini)</option>
+      <option value="mistral">🟣 Mistral AI</option>
+      <option value="ollama">⚪ Ollama (Local · Free)</option>
+    </select>
+  </div>
+
+  <div>
+    <div class="section-label">Model</div>
+    <select id="model-select"></select>
+    <div class="model-chip-row" id="chip-row"></div>
+  </div>
+
+  <div id="api-key-section">
+    <div class="section-label">API Key</div>
+    <div class="api-row">
+      <input type="password" id="api-key" placeholder="Paste your API key here…"/>
+      <button class="show-btn" id="show-btn">show</button>
+    </div>
+    <div class="hint" id="api-hint"></div>
+  </div>
+
+  <div class="ollama-note" id="ollama-note">
+    ⚪ Ollama runs 100% locally — no API key needed and completely free.<br>
+    Make sure Ollama is installed and running: <strong>ollama serve</strong>
+  </div>
+
+  <div class="divider"></div>
+
+  <button class="save-btn" id="save-btn">
+    <span>✦</span> Save & Activate
+  </button>
+  <div class="saved-msg" id="saved-msg">✓ Saved! Open any AI site and start optimizing.</div>
+
+</div>
+
+<div class="footer">Backend must be running · localhost:5000</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
